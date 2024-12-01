@@ -25,15 +25,20 @@ exports.getMentorProfile = async (req, res) => {
 
 // Create a new mentor profile
 exports.createMentorProfile = async (req, res) => {
-    const { name, email, expertise, bio, availability } = req.body;
+    const { name, email, expertise, bio } = req.body;
 
     try {
+        // Check if mentor with email already exists
+        const existingMentor = await Mentor.findOne({ email });
+        if (existingMentor) {
+            return res.status(400).json({ message: 'Mentor with this email already exists' });
+        }
+
         const newMentor = new Mentor({
             name,
             email,
             expertise,
             bio,
-            availability,
         });
 
         const savedMentor = await newMentor.save();
@@ -56,7 +61,6 @@ exports.updateMentorProfile = async (req, res) => {
         mentor.email = req.body.email || mentor.email;
         mentor.expertise = req.body.expertise || mentor.expertise;
         mentor.bio = req.body.bio || mentor.bio;
-        mentor.availability = req.body.availability || mentor.availability;
 
         const updatedMentor = await mentor.save();
         res.status(200).json(updatedMentor);

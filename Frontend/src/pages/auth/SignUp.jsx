@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -8,13 +8,60 @@ export default function SignUp() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'mentee'
+    role: 'Mentee'
   });
 
-  const handleSubmit = (e) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Sign up logic would go here
-    console.log('Sign up submitted:', formData);
+    
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(data.message); // Show success message from backend
+        // Redirect based on role with user data
+        const onboardingPath = formData.role === 'Mentor' 
+          ? '/onboarding/mentor' 
+          : '/onboarding/mentee';
+        navigate(onboardingPath, {
+          state: {
+            name: formData.name,
+            email: formData.email,
+            role: formData.role
+          }
+        });
+      } else {
+        // Show specific error message from backend
+        alert(data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('Registration failed. Please try again later.');
+    }
   };
 
   return (
@@ -63,35 +110,57 @@ export default function SignUp() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="confirm-password" className="sr-only">
                 Confirm password
               </label>
               <input
                 id="confirm-password"
                 name="confirm-password"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -102,8 +171,8 @@ export default function SignUp() {
                   <input
                     type="radio"
                     name="role"
-                    value="mentee"
-                    checked={formData.role === 'mentee'}
+                    value="Mentee"
+                    checked={formData.role === 'Mentee'}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                   />
@@ -113,8 +182,8 @@ export default function SignUp() {
                   <input
                     type="radio"
                     name="role"
-                    value="mentor"
-                    checked={formData.role === 'mentor'}
+                    value="Mentor"
+                    checked={formData.role === 'Mentor'}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                   />
